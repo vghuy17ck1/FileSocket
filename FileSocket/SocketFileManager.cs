@@ -9,16 +9,35 @@ namespace FileSocket
 {
     public class SocketFileManager
     {
-        List<SocketFileInfo> fileList = new List<SocketFileInfo>();
+        public List<SocketFileInfo> FileList { get; set; }
+        public string ServerAddress { get; set; }
+        
+        public SocketFileManager()
+        {
+            FileList = new List<SocketFileInfo>();
+        }
 
-        public Task ScanFiles(string path)
+        public SocketFileManager(List<SocketFileInfo> fileList)
+        {
+            FileList = fileList;
+        }
+
+        public SocketFileManager(List<SocketFileInfo> fileList, string serverAddress)
+        {
+            FileList = fileList;
+            ServerAddress = serverAddress;
+        }
+
+        public static Task<SocketFileManager> ScanFiles(string path)
         {
             return Task.Run(() =>
             {
+                List<SocketFileInfo> fileList = new List<SocketFileInfo>();
+                SocketFileManager manager = new SocketFileManager(fileList);
                 if (!Directory.Exists(path))
                 {
                     Console.WriteLine($"Error: Directory {path} not found");
-                    return;
+                    return manager;
                 }
                 string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
                 int fileId = 0;
@@ -34,18 +53,22 @@ namespace FileSocket
                         fileId++;
                     }
                 }
+                return manager;
             });
         }
 
-        public void ParseJson(string jsonString)
+        public static SocketFileManager FromJson(string jsonString)
         {
-            fileList = JsonSerializer.Deserialize<List<SocketFileInfo>>(jsonString);
+            return new SocketFileManager
+            {
+                FileList = JsonSerializer.Deserialize<List<SocketFileInfo>>(jsonString)
+            };
         }
 
         public void PrintAllFiles()
         {
             Console.WriteLine("Id\tName\t\t\t\tPath\t\t\t\t\t\tType\t\tSize\t\tMD5");
-            foreach (SocketFileInfo sfi in fileList)
+            foreach (SocketFileInfo sfi in FileList)
             {
                 string shortPath = sfi.Path.Length > 45 ? sfi.Path.Substring(0, 45) : sfi.Path;
                 Console.WriteLine($"{sfi.ID, -4}\t{sfi.Name, -25}\t{shortPath, -45}\t{sfi.Type, -10}\t{sfi.Size, -10}\t{sfi.MD5, -10}");
@@ -54,7 +77,7 @@ namespace FileSocket
 
         public string Json()
         {
-            return JsonSerializer.Serialize(fileList);
+            return JsonSerializer.Serialize(FileList);
         }
     }
 }

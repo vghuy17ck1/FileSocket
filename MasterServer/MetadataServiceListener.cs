@@ -16,9 +16,16 @@ namespace MasterServer
         private const int port = 10000;
         private const int bufferSize = 1024;
         private TcpListener listener;
-        private CancellationTokenSource cancellation = new CancellationTokenSource();
-        private List<TcpClient> clientList = new List<TcpClient>();
-        private List<string> fileList = new List<string>();
+        private CancellationTokenSource cancellation;
+        private List<TcpClient> clientList;
+        public List<SocketFileManager> socketFileManagers { get; set; }
+
+        public MetadataServiceListener()
+        {
+            cancellation = new CancellationTokenSource();
+            clientList = new List<TcpClient>();
+            socketFileManagers = new List<SocketFileManager>();
+        }
 
         public async Task StartServer()
         {
@@ -35,15 +42,15 @@ namespace MasterServer
                     TcpClient client = await Task.Run(() => listener.AcceptTcpClientAsync(), cancellation.Token);
                     // Add to client list
                     clientList.Add(client);
-                    Console.WriteLine($"File server connected: {client.Client.RemoteEndPoint}");
-                    // Read message first time from client
+                    Console.WriteLine($"File server {counter} connected: {client.Client.RemoteEndPoint}");
+                    // Read size of file list
                     byte[] buffer = new byte[bufferSize];
                     NetworkStream ns = client.GetStream();
                     ns.Read(buffer, 0, buffer.Length);
-                    string message = Encoding.ASCII.GetString(buffer);
-                    Console.WriteLine(message);
-                    // Create a new thread
-                    Thread c = new Thread(() => ServerReceive(client));
+                    string lengthMessage = Encoding.ASCII.GetString(buffer);
+                    int sizeOfNextMessage = int.Parse(lengthMessage);
+                    // Create a new thread, then read the message by size
+                    Thread c = new Thread(() => ServerReceive(client, sizeOfNextMessage));
                     c.Start();
                 }
             }
@@ -54,59 +61,49 @@ namespace MasterServer
             }
         }
 
-        public void ServerReceive(TcpClient client)
+        public void ServerReceive(TcpClient client, int messageSize)
         {
-            byte[] buffer = new byte[bufferSize];
+            // Read message by size
+            byte[] buffer = new byte[messageSize];
             string message;
             while (true)
             {
                 try
                 {
+                    // Receive file list
                     NetworkStream stream = client.GetStream();
                     stream.Read(buffer, 0, buffer.Length);
                     message = Encoding.ASCII.GetString(buffer);
-                    Console.WriteLine(message);
+                    // Convert file list from json to object
+                    ReadMessage(message, client.Client.RemoteEndPoint.ToString());
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine($"Client Disconnected: {client.Client.RemoteEndPoint}");
+                    // Remove from master server file list when disconnected
+                    socketFileManagers.Remove(socketFileManagers.Find(m => m.ServerAddress == client.Client.RemoteEndPoint.ToString()));
                     clientList.Remove(client);
                     break;
                 }
             }
         }
 
-        public void BoardCastMessage(string message)
+        public void ReadMessage(string message, string serverAddress)
         {
             try
             {
-                byte[] buffer = new byte[1024];
-                foreach (TcpClient client in clientList)
-                {
-                    NetworkStream broadcastStream = client.GetStream();
-                    broadcastStream.Write(buffer, 0, buffer.Length);
-                    broadcastStream.Flush();
-                }
-            }
-            catch (SocketException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
-
-        public void ReadMessage(string message)
-        {
-            SocketFileManager manager = new SocketFileManager();
-            try
-            {
-                manager.ParseJson(message);
+                SocketFileManager fileManager = SocketFileManager.FromJson(message);
+                fileManager.ServerAddress = serverAddress;
+                // Add to master server file list
+                Console.WriteLine($"Received files from client {fileManager.ServerAddress}");
+                fileManager.PrintAllFiles();
+                socketFileManagers.Add(fileManager);
             }
             catch (JsonException ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-            manager.PrintAllFiles();
         }
 
         public bool SetIPAddress(string ip)

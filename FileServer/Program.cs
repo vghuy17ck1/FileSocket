@@ -17,9 +17,6 @@ namespace FileServer
                 Console.WriteLine("Could not parse this ip address.");
             Console.WriteLine("\nPress ENTER to continue...");
             Console.Read();
-            msl.SendMessage("Hello");
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
         }
     }
 }
