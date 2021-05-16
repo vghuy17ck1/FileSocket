@@ -13,26 +13,27 @@ namespace MasterServer
     public class MetadataServiceListener
     {
         private IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-        private const int port = 10000;
+        private const int portForFileServer = 10000;
         private const int bufferSize = 1024;
+
         private TcpListener listener;
         private CancellationTokenSource cancellation;
-        private List<TcpClient> clientList;
+        private List<TcpClient> fileServerList;
         public List<SocketFileManager> socketFileManagers { get; set; }
 
         public MetadataServiceListener()
         {
             cancellation = new CancellationTokenSource();
-            clientList = new List<TcpClient>();
+            fileServerList = new List<TcpClient>();
             socketFileManagers = new List<SocketFileManager>();
         }
 
         public async Task StartServer()
         {
-            listener = new TcpListener(ipAddress, port);
+            listener = new TcpListener(ipAddress, portForFileServer);
             listener.Start();
-            Console.WriteLine($"Server is listening at {listener.LocalEndpoint}");
-            Console.WriteLine("Waiting for connection...");
+            Console.WriteLine($"Server for File Server(s) is listening at {listener.LocalEndpoint}");
+            Console.WriteLine("Waiting for File Server...");
             try
             {
                 int counter = 0;
@@ -40,9 +41,9 @@ namespace MasterServer
                 {
                     counter++;
                     TcpClient client = await Task.Run(() => listener.AcceptTcpClientAsync(), cancellation.Token);
-                    // Add to client list
-                    clientList.Add(client);
-                    Console.WriteLine($"File server {counter} connected: {client.Client.RemoteEndPoint}");
+                    // Add to File server list
+                    fileServerList.Add(client);
+                    Console.WriteLine($"\nFile server {counter} connected: {client.Client.RemoteEndPoint}");
                     // Read size of file list
                     byte[] buffer = new byte[bufferSize];
                     NetworkStream ns = client.GetStream();
@@ -50,7 +51,7 @@ namespace MasterServer
                     string lengthMessage = Encoding.ASCII.GetString(buffer);
                     int sizeOfNextMessage = int.Parse(lengthMessage);
                     // Create a new thread, then read the message by size
-                    Thread c = new Thread(() => ServerReceive(client, sizeOfNextMessage));
+                    Thread c = new Thread(() => ServiceForFileServer(client, sizeOfNextMessage));
                     c.Start();
                 }
             }
@@ -61,7 +62,7 @@ namespace MasterServer
             }
         }
 
-        public void ServerReceive(TcpClient client, int messageSize)
+        public void ServiceForFileServer(TcpClient client, int messageSize)
         {
             // Read message by size
             byte[] buffer = new byte[messageSize];
@@ -75,28 +76,28 @@ namespace MasterServer
                     stream.Read(buffer, 0, buffer.Length);
                     message = Encoding.ASCII.GetString(buffer);
                     // Convert file list from json to object
-                    ReadMessage(message, client.Client.RemoteEndPoint.ToString());
+                    ReadMessageFromFileServer(message, client.Client.RemoteEndPoint.ToString());
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    Console.WriteLine($"Client Disconnected: {client.Client.RemoteEndPoint}");
+                    Console.WriteLine($"File Server Disconnected: {client.Client.RemoteEndPoint}");
                     // Remove from master server file list when disconnected
                     socketFileManagers.Remove(socketFileManagers.Find(m => m.ServerAddress == client.Client.RemoteEndPoint.ToString()));
-                    clientList.Remove(client);
-                    break;
+                    fileServerList.Remove(client);
+                    return;
                 }
             }
         }
 
-        public void ReadMessage(string message, string serverAddress)
+        public void ReadMessageFromFileServer(string message, string serverAddress)
         {
             try
             {
                 SocketFileManager fileManager = SocketFileManager.FromJson(message);
                 fileManager.ServerAddress = serverAddress;
                 // Add to master server file list
-                Console.WriteLine($"Received files from client {fileManager.ServerAddress}");
+                Console.WriteLine($"Received files from File server {fileManager.ServerAddress}");
                 fileManager.PrintAllFiles();
                 socketFileManagers.Add(fileManager);
             }

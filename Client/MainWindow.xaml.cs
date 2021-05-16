@@ -20,9 +20,53 @@ namespace Client
     /// </summary>
     public partial class MainWindow : Window
     {
+        LoginWindow loginUI = null;
+        private ClientServiceClient msl = new ClientServiceClient();
+        private string serverIP = "127.0.0.1";
+        private string serverPort = "10001";
+
         public MainWindow()
         {
             InitializeComponent();
+            personalInitalize();
         }
+
+        public bool tryConnect(string _IP, string _port)
+        {
+            if (string.IsNullOrEmpty(_IP) || string.IsNullOrEmpty(_port))
+                return false;
+
+            if (!msl.SetIPAddress(_IP))
+            {
+                return false;
+            }
+
+            try
+            {
+                msl.StartClient(_IP, _port).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            serverIP = _IP;
+            serverPort = _port;
+            lbl_IP.Content = serverIP;
+            lbl_port.Content = serverPort;
+
+            return true;
+        }
+        
+
+        private void personalInitalize()
+        {
+            loginUI = new LoginWindow(this);
+            loginUI.ShowDialog();
+        }
+
+
+
+        // events of UI
     }
 }

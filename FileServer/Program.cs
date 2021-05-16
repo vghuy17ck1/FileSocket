@@ -7,7 +7,8 @@ namespace FileServer
         static void Main(string[] args)
         {
             MetadataServiceClient msl = new MetadataServiceClient();
-            Console.Write("Server IP (127.0.0.1 for localhost): ");
+            Console.WriteLine("THIS IS FILE SERVER");
+            Console.Write("Enter Server IP to connect (127.0.0.1 for localhost): ");
             string ip = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(ip))
                 ip = "127.0.0.1";
