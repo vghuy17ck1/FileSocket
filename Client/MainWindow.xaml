@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="470" Width="800" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen">
     <Grid x:Name="MainForm" Margin="0,0,0,-6">
-        <DataGrid x:Name="dg_main" Margin="10,114,10,111" SelectionChanged="dg_main_SelectionChanged"/>
+        <DataGrid x:Name="dg_main" Margin="10,114,10,111" SelectionChanged="dg_main_SelectionChanged" IsReadOnly="True" SelectionMode="Single"/>
         <Button x:Name="btn_refresh" Content="Refresh files list" HorizontalAlignment="Left" Margin="50,379,0,0" VerticalAlignment="Top" Height="35" Width="195" FontWeight="Bold" FontSize="16" Click="btn_refresh_Click"/>
         <Button x:Name="btn_download" Content="Download selected file" HorizontalAlignment="Left" Margin="535,379,0,0" VerticalAlignment="Top" Height="35" Width="195" FontSize="16" FontWeight="Bold" IsEnabled="False" Click="btn_download_Click"/>
         <Label x:Name="lbl_main" Content="Server IP:" HorizontalAlignment="Left" Margin="11,10,0,0" VerticalAlignment="Top" FontWeight="Bold" Width="64"/>

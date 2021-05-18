@@ -18,11 +18,12 @@ namespace Client
         private TcpClient clientSocket = null;
         private NetworkStream serverStream = null;
 
-        public List<SocketFileManager> socketFileManagers { get; set; }
+        public List<SocketFileManager> socketFileManagers{ get; set; }
 
         public async Task StartClient(string _IP, string _port)
         {
             clientSocket = new TcpClient();
+            socketFileManagers = null;
             try
             {
                 ipAddress = IPAddress.Parse(_IP);
@@ -91,6 +92,10 @@ namespace Client
         {
             try
             {
+                if(socketFileManagers != null)
+                {
+                    socketFileManagers.Clear();
+                }
                 socketFileManagers = SocketFileManager.FromJsonList(message);
             }
             catch (JsonException ex)

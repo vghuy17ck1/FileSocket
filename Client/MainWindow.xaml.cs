@@ -24,6 +24,7 @@ namespace Client
     {
         LoginWindow loginUI = null;
         private ClientServiceClient msl = new ClientServiceClient();
+        private udpServiceClient usc = new udpServiceClient();
         private string serverIP = "127.0.0.1";
         private string serverPort = "10001";
         private int fileServerCount = 0;
@@ -73,18 +74,21 @@ namespace Client
 
         private void btn_refresh_Click(object sender, RoutedEventArgs e)
         {
-            unselectChoice();
+            unselectChoice(); 
             //send to server signal 'refresh' then receive the list of file after then
             if (msl.SendMessageSignal("refresh") == true)
             {
                 MessageBox.Show("Request sent successfully");
                 string tmp = msl.refreshSignalThrowBack();
                 //load list to UI
-
                 if (tmp == "OK")
                 {
                     fileServerCount = msl.socketFileManagers.Count();
-                    for(int i = 0; i < fileServerCount; i++)
+                    if(cbb_fileserver.Items.Count > 0)
+                    {
+                        cbb_fileserver.Items.Clear();
+                    }
+                    for (int i = 0; i < fileServerCount; i++)
                     {
                         cbb_fileserver.Items.Add(msl.socketFileManagers[0].ServerAddress);
                     }
@@ -101,18 +105,33 @@ namespace Client
             {
                 MessageBox.Show("Failed to send request");
             }
-            
         }
 
         private void cbb_fileserver_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            dg_main.ItemsSource = msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList;
-            setIPAndPort(cbb_fileserver.SelectedItem.ToString());
+            if(cbb_fileserver.SelectedItem != null)
+            {
+                dg_main.ItemsSource = msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList;
+                setIPAndPort(cbb_fileserver.SelectedItem.ToString());
+            }
         }
 
         private void dg_main_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            selectedFile = msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList[dg_main.SelectedIndex];
+            if (cbb_fileserver.Items.Count > 0 && dg_main.Items.Count > 0)
+            {
+                int selectedRow = dg_main.SelectedIndex;
+                if (selectedRow < 0)
+                    return;
+                if(msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList !=null)
+                {
+                    if(msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList[selectedRow] != null)
+                    {
+                        SocketFileInfo tmp = msl.socketFileManagers[cbb_fileserver.SelectedIndex].FileList[selectedRow];
+                        selectedFile = new SocketFileInfo(tmp.ID, tmp.Name, tmp.Path, tmp.Type, tmp.Size, tmp.MD5);
+                    }
+                }
+            }
             btn_download.IsEnabled = true;
             btn_deselect.IsEnabled = true;
         }
@@ -129,9 +148,17 @@ namespace Client
 
         private void unselectChoice()
         {
+            if(selectedFile != null)
+            {
+                selectedFile = null;
+            }
+            if(dg_main.SelectedItem != null)
+            {
+                dg_main.UnselectAll();
+            }
+
             btn_download.IsEnabled = false;
             btn_deselect.IsEnabled = false;
-            selectedFile = null;
         }
 
         private void btn_deselect_Click(object sender, RoutedEventArgs e)
@@ -141,16 +168,19 @@ namespace Client
 
         private void btn_download_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Thông tin file đang được chọn để tải:\n " +
-                "\n- File Server IP: " + selectedFileServerIP +
-                "\n- File server Port: " + selectedFileServerPort +
-                "\n- File info:" +
-                selectedFile.ID.ToString() + ", " +
-                selectedFile.Name + ", " +
-                selectedFile.Size + ", " +
-                selectedFile.Path + ", " +
-                selectedFile.Type + "," +
-                selectedFile.MD5);
+            if(selectedFile != null)
+            {
+                MessageBox.Show("Thông tin file đang được chọn để tải:\n " +
+               "\n- File Server IP: " + selectedFileServerIP +
+               "\n- File server Port: " + selectedFileServerPort +
+               "\n- File info:" +
+               selectedFile.ID.ToString() + ", " +
+               selectedFile.Name + ", " +
+               selectedFile.Size + ", " +
+               selectedFile.Path + ", " +
+               selectedFile.Type + "," +
+               selectedFile.MD5);
+            }
         }
     }
 }
