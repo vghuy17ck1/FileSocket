@@ -23,6 +23,7 @@ namespace FileServer
                 Console.WriteLine("Connected to master server");
                 serverStream = clientSocket.GetStream();
                 string message = await GetFileInfo();
+                
                 byte[] outStream = Encoding.ASCII.GetBytes(message.Length.ToString());
                 serverStream.Write(outStream, 0, outStream.Length);
                 serverStream.Flush();

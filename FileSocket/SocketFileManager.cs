@@ -65,6 +65,14 @@ namespace FileSocket
             };
         }
 
+        public static List<SocketFileManager> FromJsonList(string jsonString)
+        {
+            List<SocketFileManager> rs = new List<SocketFileManager>();
+            rs = JsonSerializer.Deserialize<List<SocketFileManager>>(jsonString);
+
+            return rs;
+        }
+
         public void PrintAllFiles()
         {
             Console.WriteLine("Id\tName\t\t\t\tPath\t\t\t\t\t\tType\t\tSize\t\tMD5");

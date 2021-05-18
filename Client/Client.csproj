@@ -6,4 +6,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FileSocket\FileSocket.csproj" />
+  </ItemGroup>
+
 </Project>

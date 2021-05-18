@@ -11,7 +11,7 @@ namespace MasterServer
         static void Main(string[] args)
         {
             MetadataServiceListener msl = new MetadataServiceListener();
-            ClientServiceListener csl = new ClientServiceListener();
+            ClientServiceListener csl = new ClientServiceListener(msl);
             Console.WriteLine("THIS IS MASTER SERVER, PORT 10000 FOR FILE SERVER, 10001 FOR CLIENTS");
             Console.Write("Set this server IP (default is 127.0.0.1 or localhost): ");
             string ip = Console.ReadLine();
