@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace FileServer
 {
@@ -6,18 +7,44 @@ namespace FileServer
     {
         static void Main(string[] args)
         {
-            MetadataServiceClient msl = new MetadataServiceClient();
-            Console.WriteLine("THIS IS FILE SERVER");
-            Console.Write("Enter Server IP to connect (127.0.0.1 for localhost): ");
-            string ip = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(ip))
-                ip = "127.0.0.1";
-            if (msl.SetIPAddress(ip))
-                msl.StartClient().GetAwaiter().GetResult();
-            else
+            Console.Write("Enter Server IP: ");
+            string serviceIp = Console.ReadLine();
+            Console.WriteLine("Setting up download service between file server and client");
+            DownloadServiceListener dsl = new DownloadServiceListener();
+            Console.Write("Port: ");
+            int downloadServicePort;
+            if (int.TryParse(Console.ReadLine(), out downloadServicePort))
+            {
+                DownloadServiceListener.Port = downloadServicePort;
+            }
+            if (string.IsNullOrWhiteSpace(serviceIp))
+            {
+                serviceIp = "127.0.0.1";
+            }
+            if (!dsl.SetIPAddress(serviceIp))
+            {
                 Console.WriteLine("Could not parse this ip address.");
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
+                Console.Read();
+                return;
+            }
+            Console.WriteLine("Setting up metadata service between file server and master server");
+            MetadataServiceClient msl = new MetadataServiceClient();
+            Console.Write("Port: ");
+            int metadataServicePort;
+            if (int.TryParse(Console.ReadLine(), out metadataServicePort))
+            {
+                MetadataServiceClient.Port = metadataServicePort;
+            }
+            if (!msl.SetIPAddress(serviceIp))
+            {
+                Console.WriteLine("Could not parse this ip address.");
+                Console.Read();
+                return;
+            }
+            Thread downloadServiceThead = new Thread(() => dsl.StartServer());
+            downloadServiceThead.Start();
+            Thread metadataServiceThead = new Thread(() => msl.StartClient());
+            metadataServiceThead.Start();
         }
     }
 }

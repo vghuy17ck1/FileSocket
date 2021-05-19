@@ -28,48 +28,41 @@ namespace FileSocket
             ServerAddress = serverAddress;
         }
 
-        public static Task<SocketFileManager> ScanFiles(string path)
+        public static SocketFileManager ScanFiles(string path)
         {
-            return Task.Run(() =>
+            List<SocketFileInfo> fileList = new List<SocketFileInfo>();
+            SocketFileManager manager = new SocketFileManager(fileList);
+            if (!Directory.Exists(path))
             {
-                List<SocketFileInfo> fileList = new List<SocketFileInfo>();
-                SocketFileManager manager = new SocketFileManager(fileList);
-                if (!Directory.Exists(path))
-                {
-                    Console.WriteLine($"Error: Directory {path} not found");
-                    return manager;
-                }
-                string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-                int fileId = 0;
-                foreach (string file in files)
-                {
-                    FileInfo fileInfo = new FileInfo(file);
-                    using (FileStream stream = File.OpenRead(file))
-                    {
-                        MD5 md5 = MD5.Create();
-                        string checksum = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty);
-                        SocketFileInfo sfi = new SocketFileInfo(fileId, fileInfo.Name, file, fileInfo.Extension, fileInfo.Length, checksum);
-                        fileList.Add(sfi);
-                        fileId++;
-                    }
-                }
+                Console.WriteLine($"Error: Directory {path} not found");
                 return manager;
-            });
+            }
+            string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            int fileId = 0;
+            foreach (string file in files)
+            {
+                FileInfo fileInfo = new FileInfo(file);
+                using (FileStream stream = File.OpenRead(file))
+                {
+                    MD5 md5 = MD5.Create();
+                    string checksum = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty);
+                    SocketFileInfo sfi = new SocketFileInfo(fileId, fileInfo.Name, file, fileInfo.Extension, fileInfo.Length, checksum);
+                    fileList.Add(sfi);
+                    fileId++;
+                }
+            }
+            return manager;
         }
 
         public static SocketFileManager FromJson(string jsonString)
         {
-            return new SocketFileManager
-            {
-                FileList = JsonSerializer.Deserialize<List<SocketFileInfo>>(jsonString)
-            };
+            return JsonSerializer.Deserialize<SocketFileManager>(jsonString);
         }
 
         public static List<SocketFileManager> FromJsonList(string jsonString)
         {
             List<SocketFileManager> rs = new List<SocketFileManager>();
             rs = JsonSerializer.Deserialize<List<SocketFileManager>>(jsonString);
-
             return rs;
         }
 
@@ -85,7 +78,7 @@ namespace FileSocket
 
         public string Json()
         {
-            return JsonSerializer.Serialize(FileList);
+            return JsonSerializer.Serialize(this);
         }
     }
 }

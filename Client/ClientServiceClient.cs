@@ -20,7 +20,7 @@ namespace Client
 
         public List<SocketFileManager> socketFileManagers{ get; set; }
 
-        public async Task StartClient(string _IP, string _port)
+        public void StartClient(string _IP, string _port)
         {
             clientSocket = new TcpClient();
             socketFileManagers = null;
@@ -33,7 +33,7 @@ namespace Client
             }
             catch (Exception e)
             {
-                throw e;
+                throw;
             }
             
         }

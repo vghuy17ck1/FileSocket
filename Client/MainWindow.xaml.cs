@@ -14,6 +14,9 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Threading;
 using FileSocket;
+using System.Security.Cryptography;
+using System.IO;
+using Microsoft.Win32;
 
 namespace Client
 {
@@ -24,7 +27,7 @@ namespace Client
     {
         LoginWindow loginUI = null;
         private ClientServiceClient msl = new ClientServiceClient();
-        private udpServiceClient usc = new udpServiceClient();
+        private DownloadServiceClient dsc = new DownloadServiceClient();
         private string serverIP = "127.0.0.1";
         private string serverPort = "10001";
         private int fileServerCount = 0;
@@ -50,7 +53,7 @@ namespace Client
 
             try
             {
-                msl.StartClient(_IP, _port).GetAwaiter().GetResult();
+                msl.StartClient(_IP, _port);
             }
             catch (Exception e)
             {
@@ -74,7 +77,7 @@ namespace Client
 
         private void btn_refresh_Click(object sender, RoutedEventArgs e)
         {
-            unselectChoice(); 
+            unselectChoice();
             //send to server signal 'refresh' then receive the list of file after then
             if (msl.SendMessageSignal("refresh") == true)
             {
@@ -84,7 +87,7 @@ namespace Client
                 if (tmp == "OK")
                 {
                     fileServerCount = msl.socketFileManagers.Count();
-                    if(cbb_fileserver.Items.Count > 0)
+                    if (cbb_fileserver.Items.Count > 0)
                     {
                         cbb_fileserver.Items.Clear();
                     }
@@ -93,7 +96,7 @@ namespace Client
                         cbb_fileserver.Items.Add(msl.socketFileManagers[0].ServerAddress);
                     }
 
-                    if(fileServerCount > 0)
+                    if (fileServerCount > 0)
                     {
                         dg_main.ItemsSource = msl.socketFileManagers[0].FileList;
                         cbb_fileserver.SelectedIndex = 0;
@@ -166,9 +169,9 @@ namespace Client
             unselectChoice();
         }
 
-        private void btn_download_Click(object sender, RoutedEventArgs e)
+        private async void btn_download_Click(object sender, RoutedEventArgs e)
         {
-            if(selectedFile != null)
+            /*if (selectedFile != null)
             {
                 MessageBox.Show("Thông tin file đang được chọn để tải:\n " +
                "\n- File Server IP: " + selectedFileServerIP +
@@ -180,6 +183,29 @@ namespace Client
                selectedFile.Path + ", " +
                selectedFile.Type + "," +
                selectedFile.MD5);
+            }*/
+            dsc = new DownloadServiceClient(selectedFileServerIP, selectedFileServerPort);
+            LabelDownloadStatus.Content = $"Downloading: {selectedFile.Name}";
+            byte[] receivedData = await dsc.BeginFileReceiver(selectedFile.Path, selectedFile.Size);
+            LabelDownloadStatus.Content = "Computing hashsum";
+            MD5 md5 = MD5.Create();
+            string checksum = BitConverter.ToString(md5.ComputeHash(receivedData)).Replace("-", string.Empty);
+            if (checksum.Equals(selectedFile.MD5))
+            {
+                LabelDownloadStatus.Content = "Saving";
+                SaveFileDialog dialog = new SaveFileDialog();
+                if (dialog.ShowDialog() == true)
+                {
+                    File.WriteAllBytes(dialog.FileName, receivedData);
+                    LabelDownloadStatus.Content = "File saved";
+                }
+                else
+                {
+                    LabelDownloadStatus.Content = "Download canceled";
+                }
+            } else
+            {
+                LabelDownloadStatus.Content = "Checksum failed, please try again";
             }
         }
     }

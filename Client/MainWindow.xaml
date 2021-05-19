@@ -7,6 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="470" Width="800" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen">
     <Grid x:Name="MainForm" Margin="0,0,0,-6">
+        <StackPanel VerticalAlignment="Top" Margin="10, 75, 500, 0">
+            <Label x:Name="LabelDownloadStatus" Content="Download Status"></Label>
+        </StackPanel>
         <DataGrid x:Name="dg_main" Margin="10,114,10,111" SelectionChanged="dg_main_SelectionChanged" IsReadOnly="True" SelectionMode="Single"/>
         <Button x:Name="btn_refresh" Content="Refresh files list" HorizontalAlignment="Left" Margin="50,379,0,0" VerticalAlignment="Top" Height="35" Width="195" FontWeight="Bold" FontSize="16" Click="btn_refresh_Click"/>
         <Button x:Name="btn_download" Content="Download selected file" HorizontalAlignment="Left" Margin="535,379,0,0" VerticalAlignment="Top" Height="35" Width="195" FontSize="16" FontWeight="Bold" IsEnabled="False" Click="btn_download_Click"/>
@@ -18,6 +21,5 @@
         <ComboBox x:Name="cbb_fileserver" HorizontalAlignment="Left" Margin="572,14,0,0" VerticalAlignment="Top" Width="198" SelectionChanged="cbb_fileserver_SelectionChanged"/>
         <Label x:Name="lbl_main4" Content="Selected File server:" HorizontalAlignment="Left" Margin="445,12,0,0" VerticalAlignment="Top" FontWeight="Bold"/>
         <Button x:Name="btn_deselect" Content="Deselect" HorizontalAlignment="Left" Margin="311,379,0,0" VerticalAlignment="Top" Height="35" Width="195" FontSize="16" FontWeight="Bold" IsEnabled="False" Click="btn_deselect_Click"/>
-
     </Grid>
 </Window>

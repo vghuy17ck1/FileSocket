@@ -12,8 +12,8 @@ namespace MasterServer
 {
     class ClientServiceListener
     {
+        public static int Port { get; set; } = 10001;
         private IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-        private const int portForClient = 10001;
         private const int bufferSize = 1024;
 
         private MetadataServiceListener msl = null;
@@ -31,7 +31,7 @@ namespace MasterServer
 
         public async Task StartServerForClient()
         {
-            clientListener = new TcpListener(ipAddress, portForClient);
+            clientListener = new TcpListener(ipAddress, Port);
             clientListener.Start();
             Console.WriteLine($"Server for Client(s) is listening at {clientListener.LocalEndpoint}");
             Console.WriteLine("Waiting for Client...");

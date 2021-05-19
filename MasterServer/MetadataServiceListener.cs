@@ -12,8 +12,8 @@ namespace MasterServer
 {
     public class MetadataServiceListener
     {
+        public static int Port { get; set; } = 10000;
         private IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-        private const int portForFileServer = 10000;
         private const int bufferSize = 1024;
 
         private TcpListener listener;
@@ -28,9 +28,9 @@ namespace MasterServer
             socketFileManagers = new List<SocketFileManager>();
         }
 
-        public async Task StartServer()
+        public void StartServer()
         {
-            listener = new TcpListener(ipAddress, portForFileServer);
+            listener = new TcpListener(ipAddress, Port);
             listener.Start();
             Console.WriteLine($"Server for File Server(s) is listening at {listener.LocalEndpoint}");
             Console.WriteLine("Waiting for File Server...");
@@ -40,7 +40,7 @@ namespace MasterServer
                 while (true)
                 {
                     counter++;
-                    TcpClient client = await Task.Run(() => listener.AcceptTcpClientAsync(), cancellation.Token);
+                    TcpClient client = listener.AcceptTcpClient();
                     // Add to File server list
                     fileServerList.Add(client);
                     Console.WriteLine($"\nFile server {counter} connected: {client.Client.RemoteEndPoint}");
@@ -48,7 +48,7 @@ namespace MasterServer
                     byte[] buffer = new byte[bufferSize];
                     NetworkStream ns = client.GetStream();
                     ns.Read(buffer, 0, buffer.Length);
-                    string lengthMessage = Encoding.ASCII.GetString(buffer);
+                    string lengthMessage = Encoding.UTF8.GetString(buffer);
                     int sizeOfNextMessage = int.Parse(lengthMessage);
                     // Create a new thread, then read the message by size
                     Thread c = new Thread(() => ServiceForFileServer(client, sizeOfNextMessage));
@@ -74,9 +74,9 @@ namespace MasterServer
                     // Receive file list
                     NetworkStream stream = client.GetStream();
                     stream.Read(buffer, 0, buffer.Length);
-                    message = Encoding.ASCII.GetString(buffer);
+                    message = Encoding.UTF8.GetString(buffer);
                     // Convert file list from json to object
-                    ReadMessageFromFileServer(message, client.Client.RemoteEndPoint.ToString());
+                    ReadMessage(message, client.Client.RemoteEndPoint.ToString());
                 }
                 catch (Exception ex)
                 {
@@ -90,12 +90,11 @@ namespace MasterServer
             }
         }
 
-        public void ReadMessageFromFileServer(string message, string serverAddress)
+        public void ReadMessage(string message, string serverAddress)
         {
             try
             {
                 SocketFileManager fileManager = SocketFileManager.FromJson(message);
-                fileManager.ServerAddress = serverAddress;
                 // Add to master server file list
                 Console.WriteLine($"Received files from File server {fileManager.ServerAddress}");
                 fileManager.PrintAllFiles();
