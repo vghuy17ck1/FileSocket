@@ -93,7 +93,7 @@ namespace Client
                     }
                     for (int i = 0; i < fileServerCount; i++)
                     {
-                        cbb_fileserver.Items.Add(msl.socketFileManagers[0].ServerAddress);
+                        cbb_fileserver.Items.Add(msl.socketFileManagers[i].ServerAddress);
                     }
 
                     if (fileServerCount > 0)
@@ -171,8 +171,9 @@ namespace Client
 
         private async void btn_download_Click(object sender, RoutedEventArgs e)
         {
-            /*if (selectedFile != null)
+            if (selectedFile != null)
             {
+                /*
                 MessageBox.Show("Thông tin file đang được chọn để tải:\n " +
                "\n- File Server IP: " + selectedFileServerIP +
                "\n- File server Port: " + selectedFileServerPort +
@@ -183,29 +184,31 @@ namespace Client
                selectedFile.Path + ", " +
                selectedFile.Type + "," +
                selectedFile.MD5);
-            }*/
-            dsc = new DownloadServiceClient(selectedFileServerIP, selectedFileServerPort);
-            LabelDownloadStatus.Content = $"Downloading: {selectedFile.Name}";
-            byte[] receivedData = await dsc.BeginFileReceiver(selectedFile.Path, selectedFile.Size);
-            LabelDownloadStatus.Content = "Computing hashsum";
-            MD5 md5 = MD5.Create();
-            string checksum = BitConverter.ToString(md5.ComputeHash(receivedData)).Replace("-", string.Empty);
-            if (checksum.Equals(selectedFile.MD5))
-            {
-                LabelDownloadStatus.Content = "Saving";
-                SaveFileDialog dialog = new SaveFileDialog();
-                if (dialog.ShowDialog() == true)
+                */
+                dsc = new DownloadServiceClient(selectedFileServerIP, selectedFileServerPort);
+                LabelDownloadStatus.Content = $"Downloading: {selectedFile.Name}";
+                byte[] receivedData = await dsc.BeginFileReceiver(selectedFile.Path, selectedFile.Size);
+                LabelDownloadStatus.Content = "Computing hashsum";
+                MD5 md5 = MD5.Create();
+                string checksum = BitConverter.ToString(md5.ComputeHash(receivedData)).Replace("-", string.Empty);
+                if (checksum.Equals(selectedFile.MD5))
                 {
-                    File.WriteAllBytes(dialog.FileName, receivedData);
-                    LabelDownloadStatus.Content = "File saved";
+                    LabelDownloadStatus.Content = "Saving";
+                    SaveFileDialog dialog = new SaveFileDialog();
+                    if (dialog.ShowDialog() == true)
+                    {
+                        File.WriteAllBytes(dialog.FileName, receivedData);
+                        LabelDownloadStatus.Content = "File saved";
+                    }
+                    else
+                    {
+                        LabelDownloadStatus.Content = "Download canceled";
+                    }
                 }
                 else
                 {
-                    LabelDownloadStatus.Content = "Download canceled";
+                    LabelDownloadStatus.Content = "Checksum failed, please try again";
                 }
-            } else
-            {
-                LabelDownloadStatus.Content = "Checksum failed, please try again";
             }
         }
     }

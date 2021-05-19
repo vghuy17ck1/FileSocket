@@ -41,6 +41,7 @@ namespace FileServer
                     byte[] data = new byte[bufferSize];
                     while (stream.Read(data, 0, data.Length) > 0)
                     {
+                        Console.WriteLine($"Sending {data.Length} bytes or data");
                         server.Send(data, data.Length, remoteEndPoint);
                     }
                 }
