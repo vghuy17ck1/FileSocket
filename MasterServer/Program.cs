@@ -30,7 +30,7 @@ namespace MasterServer
             }
             if (string.IsNullOrWhiteSpace(ip))
                 ip = "127.0.0.1";
-            if (msl.SetIPAddress(ip))
+            if (msl.SetIPAddress(ip) && csl.SetIPAddress(ip))
             {
                 threadForFileServer = new Thread(() => msl.StartServer());
                 threadForClients = new Thread(()=> csl.StartServerForClient().GetAwaiter().GetResult());
